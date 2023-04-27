@@ -1,6 +1,7 @@
 # TERRAFORM + DEBIAN 11 + LIBVIRT
 
-## install terraform in VM (libvirt/kvm)
+## Install terraform in VM (libvirt/kvm)
+
 
 ```bash
 sudo apt-get install jq unzip vim curl -y
