@@ -44,6 +44,8 @@ rm *.zip
 
 # Build debian netinstall iso
 
+* put your public the in the folder
+* user root with passowrd root (change later)
 
 rename one of the files to preseed.cfg 
 
@@ -52,8 +54,9 @@ rename one of the files to preseed.cfg
 
 run `gen.sh` to build the **ISO**
 
+
 ```bash
-./gen.sh
+./gen.sh <vm_name>
 ```
 
 ## Run Terraform 
@@ -64,3 +67,25 @@ terraform plan sshfs -auto-approve
 terraform apply -auto-approve
 terraform destroy -auto-approve
 ```
+
+
+# FIX & TIPS
+
+
+```bash
+virsh list --all && virsh pool-list --all
+```
+
+delete old vm and pools 
+
+```bash
+virsh destroy vm
+virst undefine vm
+virsh pool-destroy vm-pool
+virsh pool-undefine vm-pool
+```
+
+
+---
+
+delete terraform* files

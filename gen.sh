@@ -80,6 +80,44 @@ makeiso(){
        -c isolinux/boot.cat ./$ISODIR_WRITE 2> /dev/null
 }
 
+
+generate_hostname(){
+
+    rm  variables.tf 
+    cat > variables.tf <<EOL
+    variable "vm_name"  {
+        description = "VM name"
+        default = "$1"
+    }
+EOL
+
+    cat >> variables.tf <<EOL
+    variable "libvirt_disk_path" {
+        description = "path for libvirt pool"
+        default     = "/var/lib/libvirt/pool/${1}-pool"   
+    }
+EOL
+
+    cat >> variables.tf <<EOL
+    variable "libvirt_pool_name" {
+        description = "path for libvirt pool"
+        default     = "gino-pool"   
+    }
+EOL
+    sed -i "s/d-i netcfg\/get_hostname string .*/d-i netcfg\/get_hostname string $1/g" preseed.cfg
+}
+
+
+if [ $# -lt 1 ]
+  then
+    green "INFO" ""
+    echo "No arguments supplied"
+    echo "usage ./gen.sh <vm_name>"
+    exit 1
+fi
+
+
+green "GENERATE VARIABLE " "generate_hostname $1"
 green "CLEAN BUILD" cleanbuild
 green 'MOUNTING ISO9660 FILESYSTEM...' mountiso
 green 'COPING TO WRITABLE DIR...' copydir
@@ -88,5 +126,6 @@ green "EXTRACT INITRD" extract_rebuild
 green "MODIFY BOOT" modifyboot
 green "FIX MD5" fixmd5
 green "MAKE ISO" makeiso
+
 #green "CLEAN BUILD" cleanbuild
 

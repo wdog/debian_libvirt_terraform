@@ -4,7 +4,7 @@ provider "libvirt" {
 
 # from pool
 resource "libvirt_pool" "debian" {
-  name = "debian-pool"
+  name = var.libvirt_pool_name
   type = "dir"
   path = var.libvirt_disk_path
 }
@@ -22,17 +22,18 @@ resource "libvirt_volume" "swap" {
 }
 
 resource "libvirt_volume" "netinstall" {
-  name = "netinstall.iso"
+  name   = "netinstall.iso"
   source = "debian-netinst-preseed.iso"
-  pool = libvirt_pool.debian.name
+  pool   = libvirt_pool.debian.name
 }
+
 # MAIN 
 
 
 resource "libvirt_domain" "debian" {
-  name = var.vm_hostname
+  name   = var.vm_name
   memory = 8192
-  vcpu = 8
+  vcpu   = 8
 
   disk {
     volume_id = libvirt_volume.root.id
@@ -43,12 +44,12 @@ resource "libvirt_domain" "debian" {
   }
 
   disk {
-    file = "${var.libvirt_disk_path}/netinstall.iso" 
+    file = "${var.libvirt_disk_path}/netinstall.iso"
   }
 
 
   boot_device {
-    dev = [ "hd", "cdrom"]
+    dev = ["hd", "cdrom"]
   }
 
   network_interface {
