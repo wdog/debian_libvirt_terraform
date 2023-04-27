@@ -1,0 +1,192 @@
+#### Preseed preconfiguration file (for Debian bullseye)
+
+# Debian 11 Fully Automated UEFI LVM LUKS BTRFS Remote Decrypt via ssh DEBUG # TTY4
+
+
+### Partman early command
+### Kernel parameter
+#d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 hostname=unassigned-hostname domain=unassigned-domain
+#d-i debconf/priority critical
+
+#d-i debian-installer/add-kernel-opts string net.ifnames=0 biosdevname=0 console=ttyS0,19200n8
+### Localization
+d-i debian-installer/locale string it_IT
+d-i debian-installer/language string it
+d-i debian-installer/country string IT
+#d-i debian-installer/locale string en_US.UTF-8 fr_FR.UTF-8
+d-i localechooser/supported-locales multiselect en_US.UTF-8, it_IT.UTF-8
+
+### Keyboard selection
+d-i keyboard-configuration/xkb-keymap select it
+
+###  Network configuration
+
+# Netcfg choisira une interface connectée si possible. Cela empêchera
+# # d'afficher une liste s'il y a plusieurs interfaces.
+d-i netcfg/choose_interface select auto
+
+#d-i netcfg/choose_interface select eth0
+d-i netcfg/use_dhcp string true
+d-i netcfg/link_wait_timeout string 10
+d-i netcfg/dhcp_timeout string 60
+
+#d-i netcfg/disable_autoconfig boolean true
+
+d-i netcfg/dhcp_failed note
+#d-i netcfg/dhcp_options select auto
+
+# Set a hostname
+# Disable that annoying WEP key dialog
+d-i netcfg/wireless_wep string
+
+d-i netcfg/hostname debter
+
+### Mirror settings
+d-i mirror/country string manual
+d-i mirror/http/hostname string ftp.debian.org
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+
+### Account setup
+# Skip creation of a normal user account
+d-i passwd/make-user boolean false
+# Set root password
+d-i passwd/root-login boolean true
+d-i passwd/root-password password root
+d-i passwd/root-password-again password root
+
+### Clock and time zone setup
+# Set hardware clock to UTC
+d-i clock-setup/utc boolean true
+# Set timezone
+d-i time/zone string Europe/Paris
+# Use NTP clock during installation
+d-i clock-setup/ntp boolean true
+
+### Partitioning
+# LVM LUKS method
+
+# Inhibit partman to fill the disk with random data 
+d-i partman-auto-crypto/erase_disks boolean false
+
+#d-i partman/early_command \
+#       string dd if=/dev/zero of=/dev/sda bs=512 count=1
+
+# Force UEFI booting ('BIOS compatibility' will be lost). Default: false.
+d-i partman-efi/non_efi_system boolean false
+# Ensure the partition table is GPT - this is required for EFI
+d-i partman-partitioning/choose_label string gpt
+d-i partman-partitioning/default_label string gpt
+
+d-i partman-auto/method string crypto
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-md/device_remove_md boolean true
+d-i partman-lvm/confirm boolean false 
+d-i partman-auto-lvm/guided_size string max
+d-i partman-auto-lvm/new_vg_name string debian
+d-i partman-auto/disk string /dev/vda
+d-i partman-auto/choose_recipe select boot-crypto
+d-i partman-crypto/passphrase       password  aabbcc
+d-i partman-crypto/passphrase-again password  aabbcc
+d-i partman-auto/expert_recipe string \
+boot-crypto :: \
+  512 50 512 fat32 \
+          $primary{ } $bootable{ } \
+          method{ efi } format{ } \
+          mountpoint{ /boot/efi } \
+  . \
+  1024 1024 1024 ext4 \
+          $primary{ } $bootable{ } \
+          method{ format } format{ } \
+          use_filesystem{ } filesystem{ ext4 } \
+          mountpoint{ /boot } \
+  . \
+  8192 8192 8192 linux-swap \
+          $lvmok{ } lv_name{ swap } \
+          in_vg { debian } \
+          method{ swap } format{ } \
+  . \
+  80896 80896 1000000 btrfs \
+          $lvmok{ } lv_name{ root } \
+          in_vg { debian } \
+          method{ format } format{ } \
+          use_filesystem{ } filesystem{ btrfs } \
+          mountpoint{ / } \
+  . \
+
+#d-i partman-basicfilesystems/no_mount_point boolean false
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+
+d-i partman-md/confirm boolean true
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+
+### Apt setup
+d-i apt-setup/cdrom/set-first boolean false
+d-i apt-setup/cdrom/set-next boolean false
+d-i apt-setup/cdrom/set-failed boolean false
+d-i apt-setup/services-select multiselect security, updates
+d-i apt-setup/security_host string security.debian.org
+### Package selection
+tasksel tasksel/first multiselect standard
+# Individual additional packages to install
+d-i pkgsel/include string openssh-server vim tmux tcpdump dropbear-initramfs cryptsetup-initramfs python3.9
+d-i pkgsel/upgrade select full-upgrade
+d-i pkgsel/update-policy select none
+d-i pkgsel/updatedb boolean true
+popularity-contest popularity-contest/participate boolean false
+
+
+### GRUB STUFF
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/bootdev  string default
+
+# Note: options passed to the installer will be added automatically. 
+#d-i debian-installer/add-kernel-opts string nousb
+
+# Optional password for grub, either in clear text
+# #d-i grub-installer/password password r00tme
+# #d-i grub-installer/password-again password r00tme
+# # or encrypted using an MD5 hash, see grub-md5-crypt(8).
+# #d-i grub-installer/password-crypted password [MD5 hash]
+#
+# # Use the following option to add additional boot parameters for the
+# # installed system (if supported by the bootloader installer).
+# # Note: options passed to the installer will be added automatically.
+# #d-i debian-installer/add-kernel-opts string nousb
+#
+# ### Finishing up the installation
+# # Avoid that last message about the install being complete.
+d-i finish-install/reboot_in_progress note
+
+
+d-i preseed/late_command string \
+  mkdir -p -m 700 /target/root/.ssh; \
+  echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEe3gF//znGIzq30frI6O9qDn5eM6uqEZZlx7mR5SiS" > /target/root/.ssh/authorized_keys; \
+  in-target chown --recursive root:root /root/.ssh; \
+  in-target chmod 0644 /root/.ssh/authorized_keys; \
+  in-target update-alternatives --set editor /usr/bin/vim.basic; \
+  
+
+d-i preseed/late_command string \
+  mkdir -p -m 700 /target/root/.ssh; \
+  echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEe3gF//znGIzq30frI6O9qDn5eM6uqEZZlx7mR5SiS" > /target/root/.ssh/authorized_keys; \
+  in-target chown --recursive root:root /root/.ssh; \
+  in-target chmod 0644 /root/.ssh/authorized_keys; \
+  in-target update-alternatives --set editor /usr/bin/vim.basic; \
+  echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEe3gF//znGIzq30frI6O9qDn5eM6uqEZZlx7mR5SiS' > /target/etc/dropbear-initramfs/authorized_keys; \
+  echo 'PasswordAuthentication no' >> /target/etc/ssh/sshd_config.d/setup; \
+  echo 'PermitRootLogin prohibit-password' >> /etc/ssh/sshd_config.d/setup; \
+  echo 'auto eno1' >> /target/etc/network/interfaces; \
+  sed -i 's/eth0/eno1/g' /target/etc/network/interfaces; \
+  in-target systemctl enable --now sshd; \
+  echo 'DROPBEAR_OPTIONS="-I 300 -j -k -p 22 -s -c /bin/cryptroot-unlock"' >> /target/etc/dropbear-initramfs/config; \
+  echo 'IP="dhcp"' >> /target/etc/initramfs-tools/initramfs.conf; \
+  in-target update-initramfs -u;
+
+#  in-target passwd --expire root; \
