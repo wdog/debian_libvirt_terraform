@@ -87,5 +87,8 @@ virsh pool-undefine vm-pool
 
 
 ---
+If you change the name of the VM then you must delete all terraform* files
 
-delete terraform* files
+```bash
+rm terraform*
+```

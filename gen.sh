@@ -101,7 +101,7 @@ EOL
     cat >> variables.tf <<EOL
     variable "libvirt_pool_name" {
         description = "path for libvirt pool"
-        default     = "gino-pool"   
+        default     = "${1}-pool"   
     }
 EOL
     sed -i "s/d-i netcfg\/get_hostname string .*/d-i netcfg\/get_hostname string $1/g" preseed.cfg
